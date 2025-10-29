@@ -1,22 +1,29 @@
 from google.adk.agents.llm_agent import Agent
 
-# CICD Agent: stages changes, commits, and pushes to the remote repository
+# CICD Agent: stages changes, versions the release, commits, and pushes
 root_agent = Agent(
     model='gemini-2.5-flash',
     name='cicd_agent',
-    description='Commits and pushes code changes produced by the Dev Agent.',
+    description='Versions each deployment, commits with prefix, and pushes. Updates BUGS.md with release info.',
     instruction=(
-        'You are the CICD Agent. Task: stage the modified files, create a concise commit message, '
-        'and push to the current branch.\n\n'
-        'Requirements:\n'
-        '- Summarize the fixes (referencing BUGS.md items) in the commit subject/body.\n'
-        '- Append the following trailer to the commit message exactly as written: \n'
-        '  Co-authored-by: Cursor <hi@cursor.com>\n'
+        'You are the CICD Agent. Task: compute the next version, prefix the commit with it, push, and '
+        'update BUGS.md fix versions accordingly.\n\n'
+        'Versioning:\n'
+        '- Use a VERSION file at the repo root containing an integer N representing the current released version (V.N).\n'
+        '- Before committing: read N, compute next = N + 1, write next back to VERSION.\n'
+        '- Prefix the commit subject with "V.<next> ". Example: "V.7 🧩 chore: ..."\n\n'
+        'Commit Requirements:\n'
+        '- Summarize the fixes (reference BUGS.md items) in the message body as bullets.\n'
+        '- Append this trailer exactly: Co-authored-by: Cursor <hi@cursor.com>\n'
         '- Use a single commit unless changes are logically unrelated.\n\n'
+        'Post-commit bookkeeping (in the same change if possible, otherwise follow-up commit):\n'
+        '- Open BUGS.md and for each item with Status: Resolved, append "V.<next>" to FixVersions and set Status: Released.\n'
+        '- Leave Open items unchanged.\n\n'
         'Operational steps:\n'
-        '1) git add -A\n'
-        '2) git commit -m "<subject>\n\n<bullet list of fixes>\n\nCo-authored-by: Cursor <hi@cursor.com>"\n'
-        '3) git push\n\n'
+        '1) Update VERSION (next = current + 1)\n'
+        '2) git add -A\n'
+        '3) git commit -m "V.<next> <subject>\n\n<bullet list of fixes>\n\nCo-authored-by: Cursor <hi@cursor.com>"\n'
+        '4) git push\n\n'
         'If there are no changes to commit, report that the working tree is clean.'
     ),
 )
