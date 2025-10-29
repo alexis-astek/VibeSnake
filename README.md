@@ -1,42 +1,29 @@
 # VibeSnake
 
-A small GitHub Pages web app with an agent-driven CI flow.
+A simple browser Snake game where the player collects the letters S, N, A, K, E as food.
 
-## Overview
-- Deployed via GitHub Pages.
-- Bugs tracked in `BUGS.md` with fields: Status, Versions, FixVersions.
-- Versioning file: `VERSION` holds integer N for last released version (V.N).
-- Lightweight pipeline state: `PIPELINE_STATE.json` coordinates turn-taking between agents.
+## Gameplay
+- Control the snake on a grid and eat food items.
+- Food spawns as letters in sequence: S → N → A → K → E, then repeats.
+- Each eaten letter increases length and score; completing SNAKE may add a small bonus.
+- Hitting a wall or your own body ends the run.
 
-## Agents
-- UI Tester (`uiTesterAgent/agent.py`)
-  - Reads `PAGES_URL`, `VERSION`, `PIPELINE_STATE.json`.
-  - Appends issues to `BUGS.md` with `Versions` and `Status: Open`.
-  - Sets `PIPELINE_STATE.json.next = "dev"` when done.
-- Dev (`devAgent/agent.py`)
-  - Fixes all Open items, sets `Status: Resolved`, checks items.
-  - Maintains this README when behavior changes.
-  - Sets `PIPELINE_STATE.json.next = "cicd"` when done.
-- CICD (`cicdAgent/agent.py`)
-  - Reads `VERSION`, increments to next; prefixes commit with `V.<next>`.
-  - Converts Resolved → Released in `BUGS.md`, appends `V.<next>` to `FixVersions`.
-  - Sets `PIPELINE_STATE.json.next = "uiTester"` when done.
+## Controls
+- Arrow keys: move
+- Space/Enter: start or restart
 
-## Run Sequence (PowerShell)
-1. `$env:PAGES_URL = "https://<user>.github.io/<repo>/"`
-2. `adk run uiTesterAgent/agent.py:root_agent`
-3. `adk run devAgent/agent.py:root_agent`
-4. `adk run cicdAgent/agent.py:root_agent`
+## Files
+- `index.html`: Canvas and UI
+- `style.css`: Styling
+- `script.js`: Game logic (movement, letter spawning, collisions, scoring)
 
-Ensure git auth is configured for pushes.
+## Run Locally
+Open `index.html` directly, or serve the folder (e.g., `python -m http.server 8080`) and open `http://localhost:8080`.
 
-## Versioning
-- `VERSION` value N means the latest release is `V.N`.
-- CICD increments to `N+1` during its commit.
+## Deploy
+Host on GitHub Pages. Set `PAGES_URL` to the live URL for automated testing.
 
-## Bug semantics
-- Regression: implied when a bug reappears in a later `V.*` and `Versions` contains multiple entries.
-- `Status`: Open → Resolved (Dev) → Released (CICD).
-
-## Maintenance (Dev Agent)
-- Keep this README accurate after feature or behavior changes.
+## Project Automation (PoC)
+- Bugs: `BUGS.md` with `Status`, `Versions`, `FixVersions`
+- Versioning: `VERSION` holds integer N for release tag `V.N`
+- Turn-taking: `PIPELINE_STATE.json` coordinates UI Tester → Dev → CICD
