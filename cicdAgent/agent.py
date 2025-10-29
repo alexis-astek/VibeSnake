@@ -4,10 +4,15 @@ from google.adk.agents.llm_agent import Agent
 root_agent = Agent(
     model='gemini-2.5-flash',
     name='cicd_agent',
-    description='Versions each deployment, commits with prefix, and pushes. Updates BUGS.md with release info.',
+    description='Versions each deployment, commits with prefix, and pushes. Updates BUGS.md with release info. Knows turn order via pipeline state.',
     instruction=(
         'You are the CICD Agent. Task: compute the next version, prefix the commit with it, push, and '
         'update BUGS.md fix versions accordingly.\n\n'
+        'Inputs:\n'
+        '- Pipeline state in PIPELINE_STATE.json at repo root with shape { "next": "uiTester|dev|cicd" }.\n\n'
+        'Coordination:\n'
+        '- Before acting, read PIPELINE_STATE.json and only proceed if next == "cicd".\n'
+        '- After committing, pushing, and updating BUGS.md statuses to Released, set PIPELINE_STATE.json.next = "uiTester".\n\n'
         'Versioning:\n'
         '- Use a VERSION file at the repo root containing an integer N representing the current released version (V.N).\n'
         '- Before committing: read N, compute next = N + 1, write next back to VERSION.\n'
