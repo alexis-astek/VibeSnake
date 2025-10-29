@@ -6,7 +6,7 @@
   const ctx = canvas.getContext('2d');
   const gridSize = 20; // 32px cells on 640px -> 20x20
   const cellPx = canvas.width / gridSize; // must be integer for crisp text
-  const tickMs = 120; // game speed
+  const tickMs = 156; // ~30% slower than 120ms
 
   const letters = ['S', 'N', 'A', 'K', 'E'];
 
@@ -17,7 +17,8 @@
   let foods; // array of {x,y,letter}
   let nextLetterIndex; // index into letters for required pickup
   let score;
-  let running = true;
+  let running = false; // start idle until first input
+  let started = false; // wait for first key press
   let gameOver = false;
   let loopHandle = null;
 
@@ -32,11 +33,8 @@
   function init() {
     const startX = Math.floor(gridSize / 2);
     const startY = Math.floor(gridSize / 2);
-    snake = [
-      { x: startX, y: startY, letter: null },
-      { x: startX - 1, y: startY, letter: null },
-      { x: startX - 2, y: startY, letter: null }
-    ];
+    // Start with only the head
+    snake = [ { x: startX, y: startY, letter: null } ];
     dir = { x: 1, y: 0 };
     nextDir = { x: 1, y: 0 };
     nextLetterIndex = 0;
@@ -45,10 +43,10 @@
     spawnFoods();
     updateHUD();
     gameOver = false;
-    running = true;
-    hideOverlay();
-    if (loopHandle) clearInterval(loopHandle);
-    loopHandle = setInterval(tick, tickMs);
+    running = false;
+    started = false;
+    showOverlay('Ready', 'Press Arrow keys or WASD to start');
+    if (loopHandle) { clearInterval(loopHandle); loopHandle = null; }
     draw();
   }
 
@@ -99,7 +97,8 @@
     if (eatenIndex !== -1) {
       // Eat correct letter
       const eatenFood = foods[eatenIndex];
-      snake[0].letter = eatenFood.letter; // the new head carries the letter
+      // Attach the eaten letter to the newly added head segment
+      snake[0].letter = eatenFood.letter;
       score += 10;
       nextLetterIndex = (nextLetterIndex + 1) % letters.length;
       // respawn just the eaten food anywhere not occupied
@@ -234,6 +233,12 @@
       const nd = keyDir[e.code];
       // prevent reversing directly into neck
       if (!isOpposite(nd, dir)) nextDir = nd;
+      if (!started && !gameOver) {
+        started = true;
+        running = true;
+        hideOverlay();
+        if (!loopHandle) loopHandle = setInterval(tick, tickMs);
+      }
       e.preventDefault();
     } else if (e.code === 'KeyP') {
       togglePause();
@@ -247,7 +252,7 @@
   restartBtn.addEventListener('click', () => init());
 
   function togglePause() {
-    if (gameOver) return;
+    if (gameOver || !started) return;
     running = !running;
     if (running) {
       hideOverlay();
